@@ -1,4 +1,3 @@
-
 import streamlit as st
 import networkx as nx
 import pandas as pd
@@ -258,4 +257,5 @@ with col_data:
         c1, c2 = st.columns(2)
         c1.metric("Số đỉnh", G.number_of_nodes())
         c2.metric("Số cạnh", G.number_of_edges())
+
 
