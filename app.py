@@ -1,3 +1,4 @@
+
 import streamlit as st
 import networkx as nx
 import pandas as pd
@@ -12,26 +13,26 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap');
     html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-
+    
     [data-testid="stSidebar"] { background-color: #f8f9fa; border-right: 1px solid #e0e0e0; }
-
+    
     .main-header {
         font-family: 'JetBrains Mono', monospace; color: #2d3436;
         font-weight: 700; font-size: 2.2em; text-align: center;
         margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 2px solid #0984e3;
     }
-
+    
     .viz-card {
         background: white; padding: 15px; border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #dfe6e9; margin-bottom: 20px;
     }
-
+    
     .algo-result {
         background-color: #2d3436; color: #00cec9; padding: 15px;
         border-radius: 8px; font-family: 'JetBrains Mono', monospace;
         border-left: 5px solid #00cec9; margin-top: 15px;
     }
-
+    
     .stButton button { width: 100%; border-radius: 8px; font-weight: 600; }
     </style>
     """, unsafe_allow_html=True)
@@ -40,7 +41,6 @@ if 'do_thi' not in st.session_state: st.session_state['do_thi'] = nx.Graph()
 if 'algo_run' not in st.session_state: st.session_state['algo_run'] = None
 if 'algo_result_fig' not in st.session_state: st.session_state['algo_result_fig'] = None
 if 'algo_message' not in st.session_state: st.session_state['algo_message'] = ""
-
 
 def ve_do_thi(do_thi, duong_di=None, danh_sach_canh=None, tieu_de="", highlight_color='#e74c3c'):
     is_directed = do_thi.is_directed()
@@ -56,31 +56,23 @@ def ve_do_thi(do_thi, duong_di=None, danh_sach_canh=None, tieu_de="", highlight_
         if duong_di:
             path_edges = list(zip(duong_di, duong_di[1:]))
             nx.draw_networkx_nodes(do_thi, pos, nodelist=duong_di, node_color=highlight_color, node_size=600, ax=ax)
-            nx.draw_networkx_edges(do_thi, pos, edgelist=path_edges, edge_color=highlight_color, width=3, ax=ax,
-                                   arrows=is_directed)
-
+            nx.draw_networkx_edges(do_thi, pos, edgelist=path_edges, edge_color=highlight_color, width=3, ax=ax, arrows=is_directed)
+            
         if danh_sach_canh:
-            nodes_in_edges = set();
-            [nodes_in_edges.update([u, v]) for u, v in danh_sach_canh]
-            nx.draw_networkx_nodes(do_thi, pos, nodelist=list(nodes_in_edges), node_color=highlight_color,
-                                   node_size=600, ax=ax)
-            nx.draw_networkx_edges(do_thi, pos, edgelist=danh_sach_canh, edge_color=highlight_color, width=3, ax=ax,
-                                   arrows=is_directed)
+            nodes_in_edges = set(); [nodes_in_edges.update([u, v]) for u, v in danh_sach_canh]
+            nx.draw_networkx_nodes(do_thi, pos, nodelist=list(nodes_in_edges), node_color=highlight_color, node_size=600, ax=ax)
+            nx.draw_networkx_edges(do_thi, pos, edgelist=danh_sach_canh, edge_color=highlight_color, width=3, ax=ax, arrows=is_directed)
 
-        ax.set_title(tieu_de, fontsize=14, fontweight='bold', color='#2d3436');
-        ax.axis('off')
+        ax.set_title(tieu_de, fontsize=14, fontweight='bold', color='#2d3436'); ax.axis('off')
         return fig
-    except:
-        return None
-
+    except: return None
 
 def thuat_toan_fleury(G_input):
     G = G_input.copy()
     bac_le = [v for v, d in G.degree() if d % 2 == 1]
     if len(bac_le) not in [0, 2]: return None, "Không thỏa mãn điều kiện Euler (Số bậc lẻ != 0 hoặc 2)"
     u = bac_le[0] if len(bac_le) == 2 else list(G.nodes())[0]
-    path = [];
-    edges_path = []
+    path = []; edges_path = []
     while G.number_of_edges() > 0:
         neighbors = list(G.neighbors(u))
         if not neighbors: return None, "Đồ thị không liên thông"
@@ -88,28 +80,22 @@ def thuat_toan_fleury(G_input):
         for v in neighbors:
             if G.degree(u) == 1: next_v = v; break
             G.remove_edge(u, v)
-            if nx.has_path(G, u, v):
-                next_v = v; G.add_edge(u, v); break
-            else:
-                G.add_edge(u, v, weight=1)
+            if nx.has_path(G, u, v): next_v = v; G.add_edge(u, v); break
+            else: G.add_edge(u, v, weight=1)
         if next_v is None: next_v = neighbors[0]
         if G.has_edge(u, next_v):
-            G.remove_edge(u, next_v);
-            edges_path.append((u, next_v));
-            path.append(next_v);
-            u = next_v
+            G.remove_edge(u, next_v); edges_path.append((u, next_v)); path.append(next_v); u = next_v
     return edges_path, "Thành công"
-
 
 st.markdown('<div class="main-header">🔮 GRAPH THEORY MASTER</div>', unsafe_allow_html=True)
 
 with st.sidebar:
     st.header("⚙️ CẤU HÌNH")
-
+    
     with st.expander("📝 Dữ liệu & File", expanded=True):
         loai_do_thi = st.radio("Loại:", ["Vô hướng (Graph)", "Có hướng (DiGraph)"], horizontal=True)
         is_directed = True if "Có hướng" in loai_do_thi else False
-
+        
         uploaded_file = st.file_uploader("📂 Nạp file (.txt)", type=['txt'])
         default_data = "A B 4\nA C 2\nB C 5\nB D 10\nC E 3\nD F 11\nE D 4"
         if uploaded_file:
@@ -118,7 +104,7 @@ with st.sidebar:
             st.toast("Đã nạp file!", icon="✅")
 
         raw_data = st.text_area("Nhập cạnh (u v w):", value=default_data, height=150)
-
+        
         c1, c2 = st.columns(2)
         with c1:
             if st.button("🔄 KHỞI TẠO", type="primary"):
@@ -127,123 +113,107 @@ with st.sidebar:
                     for line in raw_data.strip().split('\n'):
                         p = line.split()
                         if len(p) >= 2:
-                            w = int(p[2]) if len(p) > 2 else 1
+                            w = int(p[2]) if len(p)>2 else 1
                             G.add_edge(p[0], p[1], weight=w)
                     st.session_state['do_thi'] = G
                     st.session_state['algo_run'] = None
                     st.success(f"Đã tạo: {G.number_of_nodes()} đỉnh")
                     st.rerun()
-                except Exception as e:
-                    st.error(f"Lỗi: {e}")
-
+                except Exception as e: st.error(f"Lỗi: {e}")
+        
         with c2:
             st.download_button("💾 LƯU FILE", raw_data, "graph.txt", "text/plain")
 
     st.divider()
     st.header("🧮 THUẬT TOÁN")
-
+    
     if len(st.session_state['do_thi']) > 0:
-        algo = st.selectbox("Chọn thuật toán:",
-                            [" Dijkstra (Ngắn nhất)",
-                             " BFS (Chiều rộng)",
-                             " DFS (Chiều sâu)",
-                             " Prim (MST)",
-                             " Kruskal (MST)",
-                             " Ford-Fulkerson (Max Flow)",
-                             " Fleury (Euler Path)",
-                             " Hierholzer (Euler Circuit)"])
-
+        algo = st.selectbox("Chọn thuật toán:", 
+            [" Dijkstra (Ngắn nhất)", 
+             " BFS (Chiều rộng)", 
+             " DFS (Chiều sâu)", 
+             " Prim (MST)", 
+             " Kruskal (MST)", 
+             " Ford-Fulkerson (Max Flow)",
+             " Fleury (Euler Path)", 
+             " Hierholzer (Euler Circuit)"])
+        
         col_start, col_end = st.columns(2)
         nodes = list(st.session_state['do_thi'].nodes())
-
-        with col_start:
-            start_node = st.selectbox("Start:", nodes) if nodes else None
+        
+        with col_start: start_node = st.selectbox("Start:", nodes) if nodes else None
         with col_end:
             need_end = ["Dijkstra", "Ford-Fulkerson"]
             if any(x in algo for x in need_end) or "BFS" in algo or "DFS" in algo:
-                end_node = st.selectbox("End:", nodes, index=len(nodes) - 1) if nodes else None
-            else:
-                end_node = None
+                end_node = st.selectbox("End:", nodes, index=len(nodes)-1) if nodes else None
+            else: end_node = None
 
         if st.button("▶️ CHẠY THUẬT TOÁN", type="primary"):
             G = st.session_state['do_thi']
-            fig = None;
-            msg = ""
-
+            fig = None; msg = ""
+            
             try:
                 if "BFS" in algo:
                     tree = list(nx.bfs_tree(G, start_node).edges())
                     fig = ve_do_thi(G, danh_sach_canh=tree, tieu_de=f"BFS từ {start_node}", highlight_color='#0984e3')
                     msg = f"Đã duyệt {len(tree)} cạnh theo BFS."
-
+                    
                 elif "DFS" in algo:
                     tree = list(nx.dfs_tree(G, start_node).edges())
                     fig = ve_do_thi(G, danh_sach_canh=tree, tieu_de=f"DFS từ {start_node}", highlight_color='#e84393')
                     msg = f"Đã duyệt {len(tree)} cạnh theo DFS."
-
+                    
                 elif "Dijkstra" in algo:
                     try:
                         path = nx.shortest_path(G, start_node, end_node, weight='weight')
                         length = nx.shortest_path_length(G, start_node, end_node, weight='weight')
-                        fig = ve_do_thi(G, duong_di=path, tieu_de=f"Dijkstra: {start_node} → {end_node} (W={length})",
-                                        highlight_color='#00b894')
+                        fig = ve_do_thi(G, duong_di=path, tieu_de=f"Dijkstra: {start_node} → {end_node} (W={length})", highlight_color='#00b894')
                         msg = f"Đường đi: {' → '.join(path)}\nTổng trọng số: {length}"
-                    except:
-                        msg = "Không có đường đi."
-
+                    except: msg = "Không có đường đi."
+                
                 elif "Prim" in algo:
                     if not G.is_directed() and nx.is_connected(G):
                         mst = list(nx.minimum_spanning_tree(G, algorithm='prim').edges())
-                        w = sum(G[u][v]['weight'] for u, v in mst)
+                        w = sum(G[u][v]['weight'] for u,v in mst)
                         fig = ve_do_thi(G, danh_sach_canh=mst, tieu_de=f"Prim MST (W={w})", highlight_color='#fdcb6e')
                         msg = f"Cây khung Prim gồm {len(mst)} cạnh. Tổng trọng số: {w}"
-                    else:
-                        msg = "Lỗi: Prim cần Đồ thị Vô hướng & Liên thông."
-
+                    else: msg = "Lỗi: Prim cần Đồ thị Vô hướng & Liên thông."
+                
                 elif "Kruskal" in algo:
                     if not G.is_directed() and nx.is_connected(G):
                         mst = list(nx.minimum_spanning_tree(G, algorithm='kruskal').edges())
-                        w = sum(G[u][v]['weight'] for u, v in mst)
-                        fig = ve_do_thi(G, danh_sach_canh=mst, tieu_de=f"Kruskal MST (W={w})",
-                                        highlight_color='#fdcb6e')
+                        w = sum(G[u][v]['weight'] for u,v in mst)
+                        fig = ve_do_thi(G, danh_sach_canh=mst, tieu_de=f"Kruskal MST (W={w})", highlight_color='#fdcb6e')
                         msg = f"Cây khung Kruskal gồm {len(mst)} cạnh. Tổng trọng số: {w}"
-                    else:
-                        msg = "Lỗi: Kruskal cần Đồ thị Vô hướng & Liên thông."
-
+                    else: msg = "Lỗi: Kruskal cần Đồ thị Vô hướng & Liên thông."
+                
                 elif "Fleury" in algo:
                     if not G.is_directed() and nx.is_connected(G):
                         path, err = thuat_toan_fleury(G)
                         if path:
-                            fig = ve_do_thi(G, danh_sach_canh=path, tieu_de="Fleury Algorithm",
-                                            highlight_color='#6c5ce7')
+                            fig = ve_do_thi(G, danh_sach_canh=path, tieu_de="Fleury Algorithm", highlight_color='#6c5ce7')
                             msg = f"Tìm thấy đường đi Euler qua {len(path)} cạnh."
-                        else:
-                            msg = f"Lỗi: {err}"
-                    else:
-                        msg = "Lỗi: Fleury cần Đồ thị Vô hướng & Liên thông."
-
+                        else: msg = f"Lỗi: {err}"
+                    else: msg = "Lỗi: Fleury cần Đồ thị Vô hướng & Liên thông."
+                
                 elif "Ford-Fulkerson" in algo:
                     if G.is_directed():
                         val, flow = nx.maximum_flow(G, start_node, end_node, capacity='weight')
-                        edges = [(u, v) for u in flow for v, f in flow[u].items() if f > 0]
+                        edges = [(u,v) for u in flow for v,f in flow[u].items() if f > 0]
                         fig = ve_do_thi(G, danh_sach_canh=edges, tieu_de=f"Max Flow: {val}", highlight_color='#d63031')
                         msg = f"Luồng cực đại: {val}"
-                    else:
-                        msg = "Lỗi: Ford-Fulkerson cần Đồ thị CÓ HƯỚNG."
-
+                    else: msg = "Lỗi: Ford-Fulkerson cần Đồ thị CÓ HƯỚNG."
+                
                 elif "Hierholzer" in algo:
                     if nx.is_eulerian(G):
                         circuit = list(nx.eulerian_circuit(G, source=start_node))
-                        fig = ve_do_thi(G, danh_sach_canh=circuit, tieu_de="Hierholzer (Euler Circuit)",
-                                        highlight_color='#a29bfe')
-                        path_str = " → ".join([str(u) for u, v in circuit] + [str(circuit[-1][1])])
+                        fig = ve_do_thi(G, danh_sach_canh=circuit, tieu_de="Hierholzer (Euler Circuit)", highlight_color='#a29bfe')
+                        path_str = " → ".join([str(u) for u,v in circuit] + [str(circuit[-1][1])])
                         msg = f"Chu trình Euler: {path_str}"
-                    else:
-                        msg = "Lỗi: Đồ thị không có Chu trình Euler (Tất cả đỉnh phải bậc chẵn)."
+                    else: msg = "Lỗi: Đồ thị không có Chu trình Euler (Tất cả đỉnh phải bậc chẵn)."
 
-            except Exception as e:
-                msg = f"Lỗi: {e}"
-
+            except Exception as e: msg = f"Lỗi: {e}"
+            
             st.session_state['algo_run'] = True
             st.session_state['algo_result_fig'] = fig
             st.session_state['algo_message'] = msg
@@ -260,32 +230,31 @@ with col_viz:
         fig = ve_do_thi(st.session_state['do_thi'], tieu_de="Đồ thị ban đầu")
         st.pyplot(fig)
         st.info("👈 Chọn thuật toán bên trái để phân tích.")
-    else:
-        st.warning("Vui lòng khởi tạo đồ thị.")
+    else: st.warning("Vui lòng khởi tạo đồ thị.")
     st.markdown('</div>', unsafe_allow_html=True)
 
 with col_data:
     st.markdown("### 📊 Dữ liệu chi tiết")
     if len(st.session_state['do_thi']) > 0:
         G = st.session_state['do_thi']
-
+        
         tab_mat, tab_ds, tab_canh = st.tabs(["Ma trận kề", "Danh sách kề", "DS Cạnh"])
-
+        
         with tab_mat:
             df = nx.adjacency_matrix(G).todense()
             st.dataframe(pd.DataFrame(df, index=G.nodes(), columns=G.nodes()), height=300)
         with tab_ds:
-            adj = [{"Đỉnh": n, "Kề": str([f"{nbr}({w['weight']})" for nbr, w in nbrs.items()])}
+            adj = [{"Đỉnh": n, "Kề": str([f"{nbr}({w['weight']})" for nbr, w in nbrs.items()])} 
                    for n, nbrs in nx.to_dict_of_dicts(G).items()]
             st.dataframe(pd.DataFrame(adj), height=300, hide_index=True)
         with tab_canh:
             edges = [{"U": u, "V": v, "W": d['weight']} for u, v, d in G.edges(data=True)]
             st.dataframe(pd.DataFrame(edges), height=300, hide_index=True)
-
+            
         st.markdown("---")
         is_bi = nx.is_bipartite(G)
         st.metric("Kiểm tra Đồ thị 2 phía", "✅ Là đồ thị 2 phía" if is_bi else "❌ Không phải")
-
+        
         c1, c2 = st.columns(2)
         c1.metric("Số đỉnh", G.number_of_nodes())
         c2.metric("Số cạnh", G.number_of_edges())
